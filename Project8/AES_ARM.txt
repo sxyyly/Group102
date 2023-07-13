@@ -1,0 +1,75 @@
+    .syntax unified
+    .arch armv7-a
+
+    .text
+    .global aes_encrypt
+    .align 2
+    .type aes_encrypt, %function
+aes_encrypt:
+    @ Load input block
+    ldmia r1!, {r4-r7}
+
+    @ Copy round keys
+    ldmia r2!, {r8-r11}
+
+    mov r12, #10       @ Number of rounds
+
+aes_rounds:
+    @ Perform S-Box substitution
+    sub r3, r4, #1
+    ldrb r4, [r3, r4, lsl #2]
+
+    sub r3, r5, #1
+    ldrb r5, [r3, r5, lsl #2]
+
+    sub r3, r6, #1
+    ldrb r6, [r3, r6, lsl #2]
+
+    sub r3, r7, #1
+    ldrb r7, [r3, r7, lsl #2]
+
+    @ Perform Shift Rows
+    rev r4, r4
+    rev r5, r5
+    rev r6, r6
+    rev r7, r7
+
+    rev r5, r5, ror #8
+    rev r6, r6, ror #16
+    rev r7, r7, ror #24
+
+    @ Perform Mix Columns (except for the last round)
+    cmp r12, #1
+    beq aes_last_round
+
+    @ Mix Columns
+    ldr r3, =0x02010101
+    mul r4, r4, r3
+    mul r5, r5, r3
+    mul r6, r6, r3
+    mul r7, r7, r3
+
+    eor r4, r4, r5
+    eor r6, r6, r7
+    eor r5, r5, r6
+    eor r4, r4, r6
+    eor r6, r6, r5
+    eor r5, r5, r6
+
+    @ Perform Add Round Key
+aes_last_round:
+    ldmia r8!, {r8-r11}
+    eor r4, r4, r8
+    eor r5, r5, r9
+    eor r6, r6, r10
+    eor r7, r7, r11
+
+    @ Decrement round counter
+    sub r12, r12, #1
+    bne aes_rounds
+
+    @ Store encrypted block
+    stmia r0!, {r4-r7}
+
+    bx lr
+    .size aes_encrypt, .-aes_encrypt
