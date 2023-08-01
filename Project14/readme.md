@@ -1,0 +1,1 @@
+运行指导：zaiPGP.py中导入ECMH_project模块，从Crypto.Cipher模块导入AES，从gmssl模块导入sm2，然后运行PGP.py即可
